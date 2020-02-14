@@ -1,6 +1,6 @@
 {
   "name": "elfo",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A powerful way to make complex elasticsearch queries simple with an alternative filtering syntax, supporting pagination and ngram autocomplete.",
   "main": "dist/index.js",
   "typings": "dist/index.js",
