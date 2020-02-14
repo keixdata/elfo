@@ -251,14 +251,15 @@ export async function retrieve<Item = {}>(
       : undefined;
 
   const client = params.client ?? getClient();
-  const size = params.limit ?? 25;
+  const limit = params.limit ?? 25;
 
   const response: any = await client.search({
     index: params.indexName,
     body: {
       query,
       sort,
-      size,
+      // Get 1 more element to check if next result page available
+      size: limit != 0 ? limit + 1 : limit,
       search_after: searchAfter
     }
   });
@@ -273,19 +274,22 @@ export async function retrieve<Item = {}>(
   const items: Item[] = hits.map(i => i._source);
 
   // If more items, we have to build the endCursor
-  const moreItems = hits.length < total;
+  const moreItems = items.length > limit;
   let endCursor = undefined;
   if (moreItems) {
-    const cursor = hits[hits.length - 1].sort || [];
+    const cursor = hits[limit - 1].sort || [];
     endCursor = sort.reduce(
       (p, v, i) => ({ ...p, [keys(v)[0]]: cursor[i] }),
       {}
     );
   }
 
+  // Remove the 1 more element retrieved
+  const itemsSliced = items.slice(0, limit);
+
   const page: PaginatedItems<Item> = {
-    items,
-    pageInfo: { endCursor, size: items.length, total }
+    items: itemsSliced,
+    pageInfo: { endCursor, size: itemsSliced.length, total }
   };
 
   return page;
