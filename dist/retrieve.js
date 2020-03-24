@@ -190,7 +190,7 @@ var queryFilterBuilder = function (filter, attributeName) {
 function retrieve(params) {
     var _a, _b, _c;
     return __awaiter(this, void 0, void 0, function () {
-        var filterComponent, searchComponent, query, orderBy, orderByMapped, sort, searchAfter, client, size, response, hits, total, items, moreItems, endCursor, cursor_1, page;
+        var filterComponent, searchComponent, query, orderBy, orderByMapped, sort, searchAfter, client, limit, response, hits, total, items, moreItems, endCursor, cursor_1, itemsSliced, page;
         return __generator(this, function (_d) {
             switch (_d.label) {
                 case 0:
@@ -253,13 +253,14 @@ function retrieve(params) {
                         })
                         : undefined;
                     client = (_b = params.client, (_b !== null && _b !== void 0 ? _b : utils_1.getClient()));
-                    size = (_c = params.limit, (_c !== null && _c !== void 0 ? _c : 25));
+                    limit = (_c = params.limit, (_c !== null && _c !== void 0 ? _c : 25));
                     return [4 /*yield*/, client.search({
                             index: params.indexName,
                             body: {
                                 query: query,
                                 sort: sort,
-                                size: size,
+                                // Get 1 more element to check if next result page available
+                                size: limit != 0 ? limit + 1 : limit,
                                 search_after: searchAfter
                             }
                         })];
@@ -271,18 +272,19 @@ function retrieve(params) {
                     hits = response.body.hits.hits;
                     total = response.body.hits.total.value;
                     items = hits.map(function (i) { return i._source; });
-                    moreItems = hits.length < total;
+                    moreItems = items.length > limit;
                     endCursor = undefined;
                     if (moreItems) {
-                        cursor_1 = hits[hits.length - 1].sort || [];
+                        cursor_1 = hits[limit - 1].sort || [];
                         endCursor = sort.reduce(function (p, v, i) {
                             var _a;
                             return (__assign(__assign({}, p), (_a = {}, _a[lodash_1.keys(v)[0]] = cursor_1[i], _a)));
                         }, {});
                     }
+                    itemsSliced = items.slice(0, limit);
                     page = {
-                        items: items,
-                        pageInfo: { endCursor: endCursor, size: items.length, total: total }
+                        items: itemsSliced,
+                        pageInfo: { endCursor: endCursor, size: itemsSliced.length, total: total }
                     };
                     return [2 /*return*/, page];
             }
