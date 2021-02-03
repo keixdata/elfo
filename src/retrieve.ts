@@ -169,6 +169,7 @@ export interface RetrieveParams {
   client?: Client;
   indexName: string;
   queryString?: string;
+  fuzziness?: number | 'auto';
   cursor?: any;
   limit?: number;
   orderBy?: OrderBy[];
@@ -196,7 +197,7 @@ export async function retrieve<Item = {}>(
             "_search5^1"
           ],
           type: "most_fields",
-          fuzziness: "AUTO"
+          fuzziness: params.fuzziness ?? 0
         }
       }
     : null;

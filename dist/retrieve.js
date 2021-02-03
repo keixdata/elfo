@@ -188,11 +188,11 @@ var queryFilterBuilder = function (filter, attributeName) {
     }
 };
 function retrieve(params) {
-    var _a, _b, _c;
+    var _a, _b, _c, _d;
     return __awaiter(this, void 0, void 0, function () {
         var filterComponent, searchComponent, query, orderBy, orderByMapped, sort, searchAfter, client, limit, response, hits, total, items, moreItems, endCursor, cursor_1, itemsSliced, page;
-        return __generator(this, function (_d) {
-            switch (_d.label) {
+        return __generator(this, function (_e) {
+            switch (_e.label) {
                 case 0:
                     filterComponent = params.filters
                         ? { bool: queryFilterBuilder(params.filters) }
@@ -209,7 +209,7 @@ function retrieve(params) {
                                     "_search5^1"
                                 ],
                                 type: "most_fields",
-                                fuzziness: "AUTO"
+                                fuzziness: (_a = params.fuzziness, (_a !== null && _a !== void 0 ? _a : 0))
                             }
                         }
                         : null;
@@ -219,7 +219,7 @@ function retrieve(params) {
                             must: searchComponent
                         }
                     };
-                    orderBy = (_a = params.orderBy, (_a !== null && _a !== void 0 ? _a : []));
+                    orderBy = (_b = params.orderBy, (_b !== null && _b !== void 0 ? _b : []));
                     orderByMapped = orderBy.map(function (o) { return lodash_1.mapKeys(o, function (_, k) { return k + ".retrieve"; }); });
                     sort = lodash_1.compact(__spreadArrays(orderByMapped, [{ _id: "desc" }]));
                     searchAfter = params.cursor != null
@@ -252,8 +252,8 @@ function retrieve(params) {
                             return c;
                         })
                         : undefined;
-                    client = (_b = params.client, (_b !== null && _b !== void 0 ? _b : utils_1.getClient()));
-                    limit = (_c = params.limit, (_c !== null && _c !== void 0 ? _c : 25));
+                    client = (_c = params.client, (_c !== null && _c !== void 0 ? _c : utils_1.getClient()));
+                    limit = (_d = params.limit, (_d !== null && _d !== void 0 ? _d : 25));
                     return [4 /*yield*/, client.search({
                             index: params.indexName,
                             body: {
@@ -265,7 +265,7 @@ function retrieve(params) {
                             }
                         })];
                 case 1:
-                    response = _d.sent();
+                    response = _e.sent();
                     if (response.statusCode !== 200) {
                         throw new Error(JSON.stringify(response.meta));
                     }
