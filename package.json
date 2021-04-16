@@ -1,6 +1,6 @@
 {
   "name": "@keixdata/elfo",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A powerful way to make complex elasticsearch queries simple with an alternative filtering syntax, supporting pagination and ngram autocomplete.",
   "main": "dist/index.js",
   "typings": "dist/index.js",
@@ -13,14 +13,15 @@
   "license": "AGPL-3.0-or-later",
   "dependencies": {
     "@elastic/elasticsearch": "^7.9.0",
-    "lodash": "^4.17.20"
+    "@keixdata/common": "^1.0.7",
+    "lodash": "^4.17.21"
   },
   "devDependencies": {
-    "@types/jest": "^26.0.12",
-    "@types/lodash": "^4.14.161",
-    "@types/node": "^14.6.2",
-    "jest": "^26.4.2",
-    "ts-jest": "^26.3.0",
-    "typescript": "^4.0.2"
+    "@types/jest": "^26.0.22",
+    "@types/lodash": "^4.14.168",
+    "@types/node": "^14.14.41",
+    "jest": "^26.6.3",
+    "ts-jest": "^26.5.5",
+    "typescript": "^4.2.4"
   }
 }

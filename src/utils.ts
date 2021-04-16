@@ -1,6 +1,6 @@
-import { Client } from '@elastic/elasticsearch';
+import { Client } from "@elastic/elasticsearch";
+import { createElasticClient } from "@keixdata/common";
 
 export function getClient() {
-  const node = process.env.ELASTIC_HOST ?? '127.0.0.1:9200';
-  return new Client({ node });
+  return createElasticClient();
 }
