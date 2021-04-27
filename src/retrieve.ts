@@ -62,7 +62,7 @@ function queryOperatorFilterBuilder(
       return { filter: { match: { [attributeName]: value } } };
     }
     if (isContainsQuery) {
-      return { filter: { regex: { [attributeName]: `.*${value}.*` } } };
+      return { filter: { regexp: { [attributeName]: `.*${value}.*` } } };
     }
   }
 
