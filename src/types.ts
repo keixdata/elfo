@@ -134,6 +134,7 @@ export function isAttributeValueFilter(
     op === "<" ||
     op === "<=" ||
     op === "startsWith" ||
+    op === "contains" ||
     op === "match"
   );
 }
