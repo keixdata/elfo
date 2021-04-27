@@ -10,7 +10,9 @@ export type FilterValueOperator =
   | "<"
   | "<="
   | "match"
+  | "contains"
   | "startsWith";
+
 export type FilterExistenceOperator = "exists" | "notExists";
 export type FilterGeoDistanceOperator = "geoDistance";
 
@@ -27,10 +29,11 @@ export enum FilterOperators {
   "<" = "<",
   "<=" = "<=",
   "match" = "match",
+  "contains" = "contains",
   "startsWith" = "startsWith",
   "exists" = "exists",
   "notExists" = "notExists",
-  "geoDistance" = "geoDistance"
+  "geoDistance" = "geoDistance",
 }
 
 export interface Filters {

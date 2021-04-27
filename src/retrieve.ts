@@ -11,7 +11,7 @@ import {
   isOperatorFilterArray,
   OrderBy,
   Filters,
-  PaginatedItems
+  PaginatedItems,
 } from "./types";
 
 /**
@@ -31,7 +31,7 @@ function queryOperatorFilterBuilder(
       ">": "gt",
       ">=": "gte",
       "<": "lt",
-      "<=": "lte"
+      "<=": "lte",
     };
 
     const isEqualQuery = op === "=";
@@ -39,6 +39,7 @@ function queryOperatorFilterBuilder(
     const isRangeQuery = includes(keys(rangeOperators), op);
     const isPrefixQuery = op === "startsWith";
     const isMatchQuery = op === "match";
+    const isContainsQuery = op === "contains";
 
     if (isEqualQuery) {
       return { filter: { term: { [`${attributeName}.retrieve`]: value } } };
@@ -50,9 +51,9 @@ function queryOperatorFilterBuilder(
       return {
         filter: {
           range: {
-            [`${attributeName}.retrieve`]: { [rangeOperators[op]]: value }
-          }
-        }
+            [`${attributeName}.retrieve`]: { [rangeOperators[op]]: value },
+          },
+        },
       };
     }
     if (isPrefixQuery) {
@@ -60,6 +61,9 @@ function queryOperatorFilterBuilder(
     }
     if (isMatchQuery) {
       return { filter: { match: { [attributeName]: value } } };
+    }
+    if (isContainsQuery) {
+      return { filter: { regex: { [attributeName]: `.*${value}.*` } } };
     }
   }
 
@@ -86,9 +90,9 @@ function queryOperatorFilterBuilder(
       filter: {
         geo_distance: {
           distance: `${distance}${unit}`,
-          [attributeName]: origin
-        }
-      }
+          [attributeName]: origin,
+        },
+      },
     };
   }
 
@@ -132,13 +136,13 @@ const queryFilterBuilder = (
   if (op === "or") {
     // If children filters are OperatorFilterArray call the queryOperatorFilterBuilder, else call this recursively
     const should = isOperatorFilterArray(filters)
-      ? map(filters, c => {
+      ? map(filters, (c) => {
           if (attributeName == null) {
             throw attributeNameError();
           }
           return { bool: queryOperatorFilterBuilder(c, attributeName) };
         })
-      : map(filters, c => ({ bool: queryFilterBuilder(c, attributeName) }));
+      : map(filters, (c) => ({ bool: queryFilterBuilder(c, attributeName) }));
 
     return { should, minimum_should_match: 1 };
   }
@@ -160,7 +164,9 @@ const queryFilterBuilder = (
       }, {} as { filter?: {}[]; must_not?: {}[] });
     }
     return {
-      must: map(filters, c => ({ bool: queryFilterBuilder(c, attributeName) }))
+      must: map(filters, (c) => ({
+        bool: queryFilterBuilder(c, attributeName),
+      })),
     };
   }
 };
@@ -169,7 +175,7 @@ export interface RetrieveParams {
   client?: Client;
   indexName: string;
   queryString?: string;
-  fuzziness?: number | 'auto';
+  fuzziness?: number | "auto";
   cursor?: any;
   limit?: number;
   orderBy?: OrderBy[];
@@ -194,11 +200,11 @@ export async function retrieve<Item = {}>(
             "_search2^4",
             "_search3^3",
             "_search4^2",
-            "_search5^1"
+            "_search5^1",
           ],
           type: "most_fields",
-          fuzziness: params.fuzziness ?? 0
-        }
+          fuzziness: params.fuzziness ?? 0,
+        },
       }
     : null;
 
@@ -206,20 +212,22 @@ export async function retrieve<Item = {}>(
   const query = {
     bool: {
       filter: [filterComponent],
-      must: searchComponent
-    }
+      must: searchComponent,
+    },
   };
 
   // Map on attributeName inside orderBy the multifield <attributeName>.retrieve
   // Because we can sort only by this field
   const orderBy = params.orderBy ?? [];
-  const orderByMapped = orderBy.map(o => mapKeys(o, (_, k) => `${k}.retrieve`));
+  const orderByMapped = orderBy.map((o) =>
+    mapKeys(o, (_, k) => `${k}.retrieve`)
+  );
   const sort: OrderBy[] = compact([...orderByMapped, { _id: "desc" }]);
 
   // Build searchAfter, if cursor given
   const searchAfter =
     params.cursor != null
-      ? sort.map(v => {
+      ? sort.map((v) => {
           // Get the cursor attribute value of sort attribute (k)
           const c = params.cursor[keys(v)[0]];
 
@@ -261,8 +269,8 @@ export async function retrieve<Item = {}>(
       sort,
       // Get 1 more element to check if next result page available
       size: limit != 0 ? limit + 1 : limit,
-      search_after: searchAfter
-    }
+      search_after: searchAfter,
+    },
   });
 
   if (response.statusCode !== 200) {
@@ -272,7 +280,7 @@ export async function retrieve<Item = {}>(
   const hits = response.body.hits.hits;
   const total = response.body.hits.total.value;
 
-  const items: Item[] = hits.map(i => i._source);
+  const items: Item[] = hits.map((i) => i._source);
 
   // If more items, we have to build the endCursor
   const moreItems = items.length > limit;
@@ -290,7 +298,7 @@ export async function retrieve<Item = {}>(
 
   const page: PaginatedItems<Item> = {
     items: itemsSliced,
-    pageInfo: { endCursor, size: itemsSliced.length, total }
+    pageInfo: { endCursor, size: itemsSliced.length, total },
   };
 
   return page;
