@@ -13,7 +13,6 @@
   "license": "AGPL-3.0-or-later",
   "dependencies": {
     "@elastic/elasticsearch": "^7.9.0",
-    "@keixdata/common": "^1.0.7",
     "lodash": "^4.17.21"
   },
   "devDependencies": {

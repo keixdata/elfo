@@ -23,7 +23,6 @@
  */
 
 import { Client } from "@elastic/elasticsearch";
-import { getClient } from "./utils";
 
 export interface PropertyOptions {
   type?: string;
@@ -41,7 +40,7 @@ export enum SearchPriorityLevel {
   "LEVEL_2" = 2,
   "LEVEL_3" = 3,
   "LEVEL_4" = 4,
-  "LEVEL_5" = 5
+  "LEVEL_5" = 5,
 }
 
 /**
@@ -72,8 +71,8 @@ export function setProperty(options: PropertyOptions) {
             retrieve:
               type === "text"
                 ? { type: "keyword", ignore_above: 256 }
-                : { type }
-          }
+                : { type },
+          },
         }
       : { fields: customfieldsSetting };
 
@@ -91,27 +90,27 @@ const autocompleteSearchSettings = {
         type: "nGram",
         min_gram: 1,
         max_gram: 20,
-        token_chars: ["letter", "digit"]
-      }
+        token_chars: ["letter", "digit"],
+      },
     },
     analyzer: {
       nGram_analyzer: {
         type: "custom",
         tokenizer: "whitespace",
-        filter: ["lowercase", "asciifolding", "nGram_filter"]
+        filter: ["lowercase", "asciifolding", "nGram_filter"],
       },
       whitespace_analyzer: {
         type: "custom",
         tokenizer: "whitespace",
-        filter: ["lowercase", "asciifolding"]
+        filter: ["lowercase", "asciifolding"],
       },
       email_analyzer: {
         type: "custom",
         tokenizer: "uax_url_email",
-        filter: ["lowercase"]
-      }
-    }
-  }
+        filter: ["lowercase"],
+      },
+    },
+  },
 };
 
 export interface BuildIndexConfigOptions {
@@ -135,7 +134,7 @@ export function buildIndexConfig(options: BuildIndexConfigOptions) {
   const searchableFieldParams = {
     type: "text",
     analyzer: "nGram_analyzer",
-    search_analyzer: "whitespace_analyzer"
+    search_analyzer: "whitespace_analyzer",
   };
 
   const search = searchable
@@ -144,13 +143,13 @@ export function buildIndexConfig(options: BuildIndexConfigOptions) {
         _search2: searchableFieldParams,
         _search3: searchableFieldParams,
         _search4: searchableFieldParams,
-        _search5: searchableFieldParams
+        _search5: searchableFieldParams,
       }
     : {};
 
   const mappings = {
     dynamic: false,
-    properties: { ...options.properties, ...search }
+    properties: { ...options.properties, ...search },
   };
 
   return { ...settings, mappings };
@@ -158,23 +157,23 @@ export function buildIndexConfig(options: BuildIndexConfigOptions) {
 
 export interface CreateIndexOptions {
   name: string;
-  client?: Client;
+  client: Client;
   config: { settings?: {}; mappings: {} };
 }
 
 export function createIndex(options: CreateIndexOptions) {
   const { name, config } = options;
-  const client = options.client ?? getClient();
+  const client = options.client;
   return client.indices.create({ index: name, body: config });
 }
 
 export interface DeleteIndexOptions {
   name: string;
-  client?: Client;
+  client: Client;
 }
 
 export function deleteIndex(options: DeleteIndexOptions) {
   const { name } = options;
-  const client = options.client ?? getClient();
+  const client = options.client;
   return client.indices.delete({ index: name });
 }

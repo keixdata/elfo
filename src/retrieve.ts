@@ -1,6 +1,5 @@
 import { Client } from "@elastic/elasticsearch";
 import { includes, keys, map, mapKeys, compact, isNumber } from "lodash";
-import { getClient } from "./utils";
 import {
   AttributeOperatorFilter,
   isAttributeValueFilter,
@@ -172,7 +171,7 @@ const queryFilterBuilder = (
 };
 
 export interface RetrieveParams {
-  client?: Client;
+  client: Client;
   indexName: string;
   queryString?: string;
   fuzziness?: number | "auto";
@@ -259,8 +258,8 @@ export async function retrieve<Item = {}>(
         })
       : undefined;
 
-  const client = params.client ?? getClient();
-  const limit = params.limit ?? 25;
+  const client = params.client;
+  const limit = params.limit ?? 30;
 
   const response: any = await client.search({
     index: params.indexName,
