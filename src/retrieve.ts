@@ -62,7 +62,8 @@ function queryOperatorFilterBuilder(
       return { filter: { match: { [attributeName]: value } } };
     }
     if (isContainsQuery) {
-      return { filter: { regexp: { [attributeName]: `.*${value}.*` } } };
+      const needle = typeof value === "string" ? value.toLowerCase() : value;
+      return { filter: { regexp: { [attributeName]: `.*${needle}.*` } } };
     }
   }
 
