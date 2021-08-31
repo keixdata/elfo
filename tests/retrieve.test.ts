@@ -1,21 +1,23 @@
-import { getClient } from "../src/utils";
 import {
   createIndex,
   buildIndexConfig,
   setProperty,
-  deleteIndex
+  deleteIndex,
+  SearchPriorityLevel,
 } from "../src/indexer";
 import { retrieve } from "../src/retrieve";
 import { times, every, includes } from "lodash";
+import { createElasticClient } from "@keixdata/common";
 
 // TODO: Add test for geoDistance operator
 
 const indexName = "elfo-test";
-const client = getClient();
-const items = times(10, n => ({
+const client = createElasticClient();
+const items = times(10, (n) => ({
   string: `${n < 5 ? "my" : "your"}String${n} is awesome`,
   number: n,
-  exists: n % 2 == 0 ? true : null
+  exists: n % 2 == 0 ? true : null,
+  deletedAt: n % 2 == 0 ? new Date().toISOString() : null,
 }));
 
 beforeAll(async () => {
@@ -24,14 +26,18 @@ beforeAll(async () => {
     properties: {
       string: setProperty({}),
       number: setProperty({ type: "integer" }),
-      exists: setProperty({ type: "boolean" })
-    }
+      exists: setProperty({ type: "boolean" }),
+      deletedAt: setProperty({
+        type: "date",
+        searchPriority: SearchPriorityLevel.NONE,
+      }),
+    },
   });
   await createIndex({ name: indexName, config, client });
 
   // Populate it
   await Promise.all(
-    items.map(item => client.index({ index: indexName, body: item }))
+    items.map((item) => client.index({ index: indexName, body: item }))
   );
 
   // Force index refresh to be sure items are actually indexed
@@ -63,19 +69,19 @@ test("it should retrieve items ordered", async () => {
   const page = await retrieve({
     client,
     indexName,
-    orderBy: [{ number: "asc" }]
+    orderBy: [{ number: "asc" }],
   });
-  const expected = times(10, n => n);
-  expect(page.items.map(i => i["number"])).toEqual(expected);
+  const expected = times(10, (n) => n);
+  expect(page.items.map((i) => i["number"])).toEqual(expected);
 });
 
 test("it should search for items by queryString", async () => {
   const page = await retrieve({
     client,
     indexName,
-    queryString: "8"
+    queryString: "8",
   });
-  expect(page.items.map(i => i["number"] == 8)).not.toEqual(
+  expect(page.items.map((i) => i["number"] == 8)).not.toEqual(
     expect.arrayContaining([false])
   );
 });
@@ -85,10 +91,10 @@ test("it should retrieve items filtered by = operator", async () => {
     client,
     indexName,
     filters: {
-      filters: [{ attributeName: "number", filters: [{ op: "=", value: 5 }] }]
-    }
+      filters: [{ attributeName: "number", filters: [{ op: "=", value: 5 }] }],
+    },
   });
-  expect(page.items.map(i => i["number"] == 5)).not.toEqual(
+  expect(page.items.map((i) => i["number"] == 5)).not.toEqual(
     expect.arrayContaining([false])
   );
 });
@@ -98,10 +104,10 @@ test("it should retrieve items filtered by != operator", async () => {
     client,
     indexName,
     filters: {
-      filters: [{ attributeName: "number", filters: [{ op: "!=", value: 5 }] }]
-    }
+      filters: [{ attributeName: "number", filters: [{ op: "!=", value: 5 }] }],
+    },
   });
-  expect(page.items.map(i => i["number"])).not.toEqual(
+  expect(page.items.map((i) => i["number"])).not.toEqual(
     expect.arrayContaining([5])
   );
 });
@@ -117,13 +123,13 @@ test("it should retrieve items filtered by >, < operators", async () => {
           op: "and",
           filters: [
             { op: ">", value: 3 },
-            { op: "<", value: 6 }
-          ]
-        }
-      ]
-    }
+            { op: "<", value: 6 },
+          ],
+        },
+      ],
+    },
   });
-  expect(page.items.map(i => i["number"] > 3 && i["number"] < 6)).not.toEqual(
+  expect(page.items.map((i) => i["number"] > 3 && i["number"] < 6)).not.toEqual(
     expect.arrayContaining([false])
   );
 });
@@ -139,15 +145,15 @@ test("it should retrieve items filtered by >=, <= operators", async () => {
           op: "and",
           filters: [
             { op: ">=", value: 3 },
-            { op: "<=", value: 6 }
-          ]
-        }
-      ]
-    }
+            { op: "<=", value: 6 },
+          ],
+        },
+      ],
+    },
   });
-  expect(page.items.map(i => i["number"] >= 3 && i["number"] <= 6)).not.toEqual(
-    expect.arrayContaining([false])
-  );
+  expect(
+    page.items.map((i) => i["number"] >= 3 && i["number"] <= 6)
+  ).not.toEqual(expect.arrayContaining([false]));
 });
 
 test("it should retrieve items filtered by match operator", async () => {
@@ -159,13 +165,13 @@ test("it should retrieve items filtered by match operator", async () => {
       filters: [
         {
           attributeName: "string",
-          filters: [{ op: "match", value: matchValue }]
-        }
-      ]
-    }
+          filters: [{ op: "match", value: matchValue }],
+        },
+      ],
+    },
   });
   expect(
-    page.items.map(i => includes(i["string"].split(" "), matchValue))
+    page.items.map((i) => includes(i["string"].split(" "), matchValue))
   ).not.toEqual(expect.arrayContaining([false]));
 });
 
@@ -178,12 +184,12 @@ test("it should retrieve items filtered by startsWith operator", async () => {
       filters: [
         {
           attributeName: "string",
-          filters: [{ op: "startsWith", value: matchValue }]
-        }
-      ]
-    }
+          filters: [{ op: "startsWith", value: matchValue }],
+        },
+      ],
+    },
   });
-  expect(page.items.map(i => i["string"].startsWith(matchValue))).not.toEqual(
+  expect(page.items.map((i) => i["string"].startsWith(matchValue))).not.toEqual(
     expect.arrayContaining([false])
   );
 });
@@ -196,12 +202,12 @@ test("it should retrieve items filtered by exists operator", async () => {
       filters: [
         {
           attributeName: "exists",
-          filters: [{ op: "exists" }]
-        }
-      ]
-    }
+          filters: [{ op: "exists" }],
+        },
+      ],
+    },
   });
-  expect(page.items.map(i => i["exists"] == true)).not.toEqual(
+  expect(page.items.map((i) => i["exists"] == true)).not.toEqual(
     expect.arrayContaining([false])
   );
 });
@@ -214,12 +220,12 @@ test("it should retrieve items filtered by notExists operator", async () => {
       filters: [
         {
           attributeName: "exists",
-          filters: [{ op: "notExists" }]
-        }
-      ]
-    }
+          filters: [{ op: "notExists" }],
+        },
+      ],
+    },
   });
-  expect(page.items.map(i => i["exists"] == null)).not.toEqual(
+  expect(page.items.map((i) => i["exists"] == null)).not.toEqual(
     expect.arrayContaining([false])
   );
 });
@@ -238,37 +244,78 @@ test("it should retrieve items filtered by complex nested filter", async () => {
           filters: [
             {
               attributeName: "exists",
-              filters: [{ op: "exists" }]
+              filters: [{ op: "exists" }],
             },
             {
               attributeName: "number",
               op: "or",
               filters: [
                 { op: "<", value: 0 },
-                { op: ">=", value: 4 }
-              ]
-            }
-          ]
+                { op: ">=", value: 4 },
+              ],
+            },
+          ],
         },
         {
           op: "and",
           filters: [
             {
               attributeName: "string",
-              filters: [{ op: "startsWith", value: "myString" }]
+              filters: [{ op: "startsWith", value: "myString" }],
             },
-            { attributeName: "number", filters: [{ op: "=", value: 3 }] }
-          ]
-        }
-      ]
-    }
+            { attributeName: "number", filters: [{ op: "=", value: 3 }] },
+          ],
+        },
+      ],
+    },
   });
 
-  const checkItemConditions = item =>
+  const checkItemConditions = (item) =>
     (item["exists"] && (item["number"] < 0 || item["number"] >= 4)) ||
     (item["string"].startsWith("myString") && item["number"] == 3);
 
-  expect(page.items.map(i => checkItemConditions(i))).not.toEqual(
+  expect(page.items.map((i) => checkItemConditions(i))).not.toEqual(
     expect.arrayContaining([false])
   );
+});
+
+it("should not return deleted records", async () => {
+  // First make sure that if is false or undefined, we have the whole dataset.
+  expect((await retrieve({ client, indexName })).items).toHaveLength(10);
+  expect(
+    (await retrieve({ client, indexName, omitDeleted: false })).items
+  ).toHaveLength(10);
+
+  // If we want to omit the delted, we only wants the deleted ( 5 items )
+  const notDeletedRecords = (
+    await retrieve<any>({ client, indexName, omitDeleted: true })
+  ).items;
+  expect(notDeletedRecords).toHaveLength(5);
+  notDeletedRecords.forEach((r) => expect(r.deletedAt).toBeNull());
+
+  const filteredNonDeletedRecords = await retrieve<any>({
+    client,
+    indexName,
+    omitDeleted: true,
+    filters: {
+      filters: [{ attributeName: "number", filters: [{ op: ">=", value: 5 }] }],
+    },
+  });
+  expect(filteredNonDeletedRecords.items).toHaveLength(3);
+  filteredNonDeletedRecords.items.forEach((f) => {
+    expect(f.deletedAt).toBeNull();
+    expect(f.number).toBeGreaterThanOrEqual(5);
+  });
+
+  const filteredRecords = await retrieve<any>({
+    client,
+    indexName,
+    filters: {
+      filters: [{ attributeName: "number", filters: [{ op: ">=", value: 5 }] }],
+    },
+  });
+  expect(filteredRecords.items).toHaveLength(5);
+  filteredRecords.items.forEach((f) => {
+    expect(f.number).toBeGreaterThanOrEqual(5);
+  });
 });

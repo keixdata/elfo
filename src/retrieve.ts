@@ -178,6 +178,7 @@ export interface RetrieveParams {
   fuzziness?: number | "auto";
   cursor?: any;
   limit?: number;
+  omitDeleted?: boolean;
   orderBy?: OrderBy[];
   filters?: Filters;
 }
@@ -189,6 +190,18 @@ export async function retrieve<Item = {}>(
   const filterComponent = params.filters
     ? { bool: queryFilterBuilder(params.filters) }
     : { match_all: {} };
+
+  const deletedComponent = params.omitDeleted
+    ? {
+        bool: {
+          must_not: {
+            exists: {
+              field: "deletedAt",
+            },
+          },
+        },
+      }
+    : null;
 
   // Build the elastic query component to perform a search
   const searchComponent = params.queryString
@@ -211,7 +224,7 @@ export async function retrieve<Item = {}>(
   // Build the elastic query, composing above components
   const query = {
     bool: {
-      filter: [filterComponent],
+      filter: compact([filterComponent, deletedComponent]),
       must: searchComponent,
     },
   };
