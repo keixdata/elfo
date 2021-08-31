@@ -46,6 +46,8 @@ jobs:
 
       - name: Installing Dependencies...
         run: yarn
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.YARN_AUTH_TOKEN }}
 
       - name: Build
         run: yarn build
