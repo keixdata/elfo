@@ -53,6 +53,6 @@ jobs:
         run: yarn build
 
       - name: Publish
-        run: yarn publish
+        run: npm publish || echo "::warning::Skipping package publishing because version already exists..."
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
