@@ -86,18 +86,18 @@ const autocompleteSearchSettings = {
   max_ngram_diff: 20,
   analysis: {
     filter: {
-      nGram_filter: {
-        type: "nGram",
+      ngram_filter: {
+        type: "ngram",
         min_gram: 1,
         max_gram: 20,
         token_chars: ["letter", "digit"],
       },
     },
     analyzer: {
-      nGram_analyzer: {
+      ngram_analyzer: {
         type: "custom",
         tokenizer: "whitespace",
-        filter: ["lowercase", "asciifolding", "nGram_filter"],
+        filter: ["lowercase", "asciifolding", "ngram_filter"],
       },
       whitespace_analyzer: {
         type: "custom",
@@ -133,7 +133,7 @@ export function buildIndexConfig(options: BuildIndexConfigOptions) {
 
   const searchableFieldParams = {
     type: "text",
-    analyzer: "nGram_analyzer",
+    analyzer: "ngram_analyzer",
     search_analyzer: "whitespace_analyzer",
   };
 
