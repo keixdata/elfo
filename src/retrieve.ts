@@ -153,7 +153,7 @@ const queryFilterBuilder = (
         if (attributeName == null) {
           throw attributeNameError();
         }
-        const res = queryOperatorFilterBuilder(c, attributeName);
+        const res: any = queryOperatorFilterBuilder(c, attributeName);
         if (res.filter) {
           prev.filter = [...(prev.filter || []), res.filter];
         }
